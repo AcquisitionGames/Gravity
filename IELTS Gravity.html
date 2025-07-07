@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gravity Game - Advanced</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    <style>
+        /* Basic reset and font */
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(to bottom right, #2c3e50, #34495e); /* Dark blue-grey gradient */
+            color: #ecf0f1; /* Light grey text */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* Game container styling */
+        .game-container {
+            background-color: rgba(44, 62, 80, 0.85); /* Slightly transparent dark blue-grey */
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+            padding: 35px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-width: 950px;
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #3498db; /* Blue accent border */
+        }
+
+        h1 {
+            font-family: 'Roboto Mono', monospace; /* Techy font for title */
+            font-size: 3em;
+            margin-bottom: 25px;
+            color: #3498db; /* Bright blue */
+            text-shadow: 0 0 15px rgba(52, 152, 219, 0.7);
+            letter-spacing: 2px;
+        }
+
+        /* Canvas styling */
+        canvas {
+            background-color: #1c2833; /* Very dark blue-grey for canvas */
+            border-radius: 15px;
+            border: 2px solid #2980b9; /* Slightly lighter blue border */
+            display: block;
+            width: 100%;
+            max-width: 850px;
+            height: 550px; /* Slightly taller canvas */
+            margin-bottom: 30px;
+            box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.9);
+            position: relative;
+        }
+
+        /* Game info and controls */
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 850px;
+            margin-bottom: 25px;
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #7f8c8d; /* Muted grey for info */
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        .game-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 850px;
+        }
+
+        #wordInput {
+            width: 100%;
+            padding: 18px 25px;
+            border: 2px solid #2980b9;
+            border-radius: 12px;
+            font-size: 1.6em;
+            background-color: #212f3d; /* Darker input background */
+            color: #ecf0f1;
+            outline: none;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+            margin-bottom: 25px;
+            text-align: center;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        #wordInput:focus {
+            border-color: #3498db;
+            box-shadow: 0 6px 25px rgba(52, 152, 219, 0.6);
+        }
+
+        #wordInput.correct {
+            background-color: #27ae60; /* Emerald green */
+            border-color: #2ecc71;
+        }
+
+        #wordInput.incorrect {
+            background-color: #c0392b; /* Alizarin red */
+            border-color: #e74c3c;
+            animation: shake 0.3s cubic-bezier(.36,.07,.19,.97) both;
+            transform: translate3d(0, 0, 0);
+            backface-visibility: hidden;
+            perspective: 1000px;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+            50% { transform: translate3d(-4px, 0, 0); }
+        }
+
+        /* Buttons */
+        button {
+            padding: 16px 32px;
+            font-size: 1.3em;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            background: linear-gradient(to right, #3498db, #2980b9); /* Blue button gradient */
+            color: #fff;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.3s ease;
+            margin: 8px;
+            font-family: 'Inter', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        button:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+            background: linear-gradient(to right, #2980b9, #3498db); /* Reverse gradient on hover */
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Speed buttons styling */
+        .speed-buttons button {
+            background: linear-gradient(to right, #7f8c8d, #95a5a6); /* Grey gradient */
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            font-size: 1em;
+            padding: 10px 20px;
+        }
+        .speed-buttons button.active {
+            background: linear-gradient(to right, #3498db, #2980b9); /* Active blue */
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+            transform: translateY(-2px);
+        }
+        .speed-buttons button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+        }
+
+
+        /* Game Over / Start Screen Overlay */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            text-align: center;
+            transition: opacity 0.5s ease;
+        }
+
+        .overlay-content {
+            background-color: #212f3d; /* Dark background for overlay content */
+            border-radius: 25px;
+            padding: 50px;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.8);
+            transform: scale(0.9);
+            animation: popIn 0.6s forwards cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            border: 2px solid #3498db;
+            max-width: 700px;
+            width: 90%;
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.5); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .overlay h2 {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 3.5em;
+            margin-bottom: 25px;
+            color: #3498db;
+            text-shadow: 0 0 20px rgba(52, 152, 219, 0.8);
+            letter-spacing: 3px;
+        }
+
+        .overlay p {
+            font-size: 1.6em;
+            margin-bottom: 40px;
+            color: #bdc3c7; /* Lighter grey */
+            line-height: 1.5;
+        }
+
+        #wordInputArea {
+            width: 80%;
+            height: 150px;
+            padding: 15px;
+            margin-bottom: 25px;
+            border-radius: 10px;
+            border: 2px solid #2980b9;
+            background-color: #1c2833;
+            color: #ecf0f1;
+            font-family: 'Inter', sans-serif;
+            font-size: 1.1em;
+            resize: vertical;
+            outline: none;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        #wordInputArea:focus {
+            border-color: #3498db;
+            box-shadow: inset 0 0 15px rgba(52, 152, 219, 0.4);
+        }
+
+        /* Custom Message Box */
+        #messageBox {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.95);
+            color: #ecf0f1;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(52, 152, 219, 0.7);
+            z-index: 101;
+            display: none;
+            font-size: 1.4em;
+            text-align: center;
+            animation: fadeIn 0.4s ease-out;
+            border: 1px solid #3498db;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, -60%); }
+            to { opacity: 1; transform: translate(-50%, -50%); }
+        }
+
+        /* Feedback text on canvas */
+        .feedback-text {
+            position: absolute;
+            font-size: 3em;
+            font-weight: bold;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.7);
+            opacity: 0;
+            animation: fadeOutUp 1s forwards;
+            pointer-events: none;
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        .feedback-text.correct {
+            color: #2ecc71; /* Emerald green */
+        }
+
+        .feedback-text.incorrect {
+            color: #e74c3c; /* Alizarin red */
+        }
+
+        @keyframes fadeOutUp {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-70px); }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.2em;
+            }
+            canvas {
+                height: 450px;
+            }
+            #wordInput {
+                font-size: 1.3em;
+                padding: 15px 20px;
+            }
+            button {
+                font-size: 1.1em;
+                padding: 14px 28px;
+            }
+            .overlay h2 {
+                font-size: 2.8em;
+            }
+            .overlay p {
+                font-size: 1.3em;
+            }
+            .feedback-text {
+                font-size: 2.2em;
+            }
+            #wordInputArea {
+                width: 90%;
+                height: 120px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .game-container {
+                padding: 25px;
+            }
+            h1 {
+                font-size: 1.8em;
+            }
+            canvas {
+                height: 350px;
+            }
+            #wordInput {
+                font-size: 1.1em;
+                padding: 12px 15px;
+            }
+            button {
+                font-size: 1em;
+                padding: 12px 25px;
+            }
+            .overlay h2 {
+                font-size: 2.2em;
+            }
+            .overlay p {
+                font-size: 1.1em;
+            }
+            .feedback-text {
+                font-size: 1.8em;
+            }
+            #wordInputArea {
+                width: 95%;
+                height: 100px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>GRAVITY TYPER</h1>
+        <div class="game-info">
+            <div id="scoreDisplay">Score: 0</div>
+            <div id="livesDisplay">Lives: 5</div>
+        </div>
+        <canvas id="gameCanvas"></canvas>
+        <div class="game-controls">
+            <input type="text" id="wordInput" placeholder="Type the English word here...">
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+                <button id="replayAudioButton" style="display:none;">Replay Audio</button>
+                <button id="skipButton" style="display:none;">Skip Word</button>
+            </div>
+            <div class="speed-buttons" style="margin-top: 15px;">
+                <button id="easySpeedButton" data-speed="easy">Easy</button>
+                <button id="mediumSpeedButton" data-speed="medium" class="active">Medium</button>
+                <button id="hardSpeedButton" data-speed="hard">Hard</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Setup / Game Over Overlay -->
+    <div id="gameOverlay" class="overlay">
+        <div class="overlay-content">
+            <h2 id="overlayTitle">GRAVITY TYPER</h2>
+            <p id="overlayMessage">Enter words (one per line) in "English / 中文" format, then click Load Words. Default words are pre-filled.</p>
+            <textarea id="wordInputArea" placeholder="e.g.,
+academic / 学术的
+action / 行动
+adult / 成年人
+advertisement / 广告
+agriculture / 农业"></textarea>
+            <button id="loadWordsButton">Load Words</button>
+            <button id="overlayStartGameButton" style="display:none;">Start Game</button>
+        </div>
+    </div>
+
+    <!-- Custom Message Box -->
+    <div id="messageBox"></div>
+
+    <script>
+        // Game configuration
+        const DEFAULT_WORDS = [
+            "academic / 学术的", "action / 行动", "adult / 成年人", "advertisement / 广告", "agriculture / 农业",
+            "airport / 机场", "alarm / 警报", "animal / 动物", "apartment / 公寓", "back / 背部",
+            "bacteria / 细菌", "balance / 平衡", "balcony / 阳台", "band / 乐队", "bank / 银行",
+            "basement / 地下室", "beach / 海滩", "behaviour / 行为", "bicycle / 自行车", "bike / 自行车",
+            "bird / 鸟", "boat / 船", "bone / 骨头", "book / 书", "booklet / 小册子",
+            "breakfast / 早餐", "brick / 砖", "bridge / 桥", "building / 建筑物", "bus / 公共汽车",
+            "business / 商业", "cafe / 咖啡馆", "cake / 蛋糕", "camel / 骆驼", "camera / 照相机",
+            "car / 汽车", "cash / 现金", "castle / 城堡", "cave / 洞穴", "certificate / 证书",
+            "chemical / 化学的", "children / 孩子", "chocolate / 巧克力", "cinema / 电影院", "city / 城市",
+            "clay / 粘土", "clean / 清洁的", "cleaning / 清洁", "climate / 气候", "club / 俱乐部"
+        ];
+
+        const INITIAL_LIVES = 5;
+        // Canvas height = 550px. Ground at 550-30 = 520px. Word height ~40px, so bottom of word at 500px.
+        // Distance to fall from y=-50 (off-screen top) to y=500 (just above ground) is 550px.
+        // Desired total fall time = 10.3 seconds (to match previous version's total reaction time).
+        // Time in milliseconds = 10300ms.
+        // Frames per second (approx) = 1000ms / 16ms/frame = 62.5 frames/s
+        // Total frames in 10.3 seconds = 10.3s * 62.5 frames/s = 643.75 frames
+        // WORD_SPEED = 550px / 643.75 frames = ~0.854 pixels/frame. Let's use 0.85 for simplicity.
+        const EASY_SPEED = 0.7; // Slower, approx 10.3s fall (from -50 to 500)
+        const MEDIUM_SPEED = 1.0; // Faster, approx 8.8s fall (from -50 to 500)
+        const HARD_SPEED = 1.5; // Even faster, approx 5.8s fall (from -50 to 500)
+
+        let currentGlobalSpeed = MEDIUM_SPEED; // Default speed
+
+        const WORD_SPAWN_INTERVAL = 1000; // Interval between words after one is resolved (typed or missed)
+        const CORRECT_ANIMATION_DURATION = 300; // ms for word fade-out on correct answer
+
+        // Canvas and context
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Game elements
+        const wordInput = document.getElementById('wordInput');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const livesDisplay = document.getElementById('livesDisplay');
+        const replayAudioButton = document.getElementById('replayAudioButton');
+        const skipButton = document.getElementById('skipButton');
+        const gameOverlay = document.getElementById('gameOverlay');
+        const overlayTitle = document.getElementById('overlayTitle');
+        const overlayMessage = document.getElementById('overlayMessage');
+        const wordInputArea = document.getElementById('wordInputArea');
+        const loadWordsButton = document.getElementById('loadWordsButton');
+        const overlayStartGameButton = document.getElementById('overlayStartGameButton');
+        const messageBox = document.getElementById('messageBox');
+
+        // Speed buttons
+        const easySpeedButton = document.getElementById('easySpeedButton');
+        const mediumSpeedButton = document.getElementById('mediumSpeedButton');
+        const hardSpeedButton = document.getElementById('hardSpeedButton');
+        const speedButtonsContainer = document.querySelector('.speed-buttons');
+
+
+        // Game state variables
+        let currentWord = null; // Object: {english: "word", chinese: "翻译", x, y, speed, alpha: 1, scale: 1, isMatched: false}
+        let score = 0;
+        let lives = INITIAL_LIVES;
+        let gameRunning = false;
+        let animationFrameId; // Stores the requestAnimationFrame ID
+        let wordsToTest = []; // Stores objects like {english: "word", chinese: "翻译"}
+        let remainingWords = []; // Words left to be tested in current game session
+        let wordSpawnTimeout; // Timeout for spawning next word
+        let correctAnimationStartTime = 0; // For correct word fade-out animation
+
+        // Speech Synthesis variables
+        let britishVoice = null;
+        const synth = window.speechSynthesis;
+
+        // Find a British English voice
+        function findBritishVoice() {
+            const voices = synth.getVoices();
+            britishVoice = voices.find(voice =>
+                voice.lang === 'en-GB' && (voice.name.includes('Google') || voice.name.includes('UK'))
+            ) || voices.find(voice => voice.lang === 'en-GB');
+
+            if (!britishVoice) {
+                console.warn("British English voice not found. Using default voice.");
+            }
+        }
+
+        // Listen for voices to be loaded
+        if (synth) {
+            synth.onvoiceschanged = findBritishVoice;
+            findBritishVoice(); // Try to find immediately if voices are already loaded
+        }
+
+        // Tone.js Synths for sound effects - Tuned for more professional feel
+        const correctSynth = new Tone.Synth({
+            oscillator: { type: "sine" },
+            envelope: { attack: 0.01, decay: 0.15, sustain: 0.05, release: 0.2 }
+        }).toDestination();
+        const incorrectSynth = new Tone.Synth({
+            oscillator: { type: "sawtooth" },
+            envelope: { attack: 0.01, decay: 0.1, sustain: 0.05, release: 0.1 }
+        }).toDestination();
+        const missSynth = new Tone.Synth({
+            oscillator: { type: "square" },
+            envelope: { attack: 0.05, decay: 0.2, sustain: 0.1, release: 0.3 }
+        }).toDestination();
+        const gameOverSynth = new Tone.PolySynth(Tone.Synth, {
+            oscillator: { type: "sine" },
+            envelope: { attack: 0.05, decay: 0.5, sustain: 0.1, release: 1 }
+        }).toDestination();
+
+        // Sound effect functions
+        function playCorrectSound() {
+            correctSynth.triggerAttackRelease("E5", "8n");
+            correctSynth.triggerAttackRelease("G5", "8n", "+0.05");
+        }
+
+        function playIncorrectSound() {
+            incorrectSynth.triggerAttackRelease("C3", "16n");
+        }
+
+        function playMissSound() {
+            missSynth.triggerAttackRelease("G2", "4n");
+        }
+
+        function playGameOverSound() {
+            gameOverSynth.triggerAttackRelease(["C3", "G2", "C2"], "2n");
+        }
+
+        // Function to show a custom message box instead of alert()
+        function showMessageBox(message, duration = 2000) {
+            messageBox.textContent = message;
+            messageBox.style.display = 'block';
+            setTimeout(() => {
+                messageBox.style.display = 'none';
+            }, duration);
+        }
+
+        // Function to show dynamic feedback on canvas
+        function showFeedbackText(text, type) {
+            const feedbackDiv = document.createElement('div');
+            feedbackDiv.textContent = text;
+            feedbackDiv.classList.add('feedback-text', type);
+
+            const canvasRect = canvas.getBoundingClientRect();
+            feedbackDiv.style.left = `${canvasRect.width / 2}px`;
+            feedbackDiv.style.top = `${canvasRect.height / 2}px`;
+            feedbackDiv.style.transform = `translate(-50%, -50%)`;
+
+            canvas.parentNode.insertBefore(feedbackDiv, canvas.nextSibling);
+
+            feedbackDiv.addEventListener('animationend', () => {
+                feedbackDiv.remove();
+            });
+        }
+
+        // Initialize canvas size
+        function resizeCanvas() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            drawGame();
+        }
+
+        // Call resize on load and window resize
+        window.addEventListener('load', () => {
+            resizeCanvas();
+            wordInputArea.value = DEFAULT_WORDS.join('\n');
+            showSetupScreen();
+        });
+        window.addEventListener('resize', resizeCanvas);
+
+        // Function to show the initial setup screen
+        function showSetupScreen() {
+            gameOverlay.style.opacity = '1';
+            gameOverlay.style.pointerEvents = 'auto';
+            overlayTitle.textContent = "GRAVITY TYPER";
+            overlayMessage.textContent = "Enter words (one per line) in 'English / 中文' format, then click Load Words. Default words are pre-filled.";
+            wordInputArea.style.display = 'block';
+            loadWordsButton.style.display = 'inline-block';
+            overlayStartGameButton.style.display = 'none';
+        }
+
+        // Function to reset game state
+        function resetGame() {
+            currentWord = null;
+            score = 0;
+            lives = INITIAL_LIVES;
+            gameRunning = false;
+            remainingWords = [...wordsToTest]; // Reset words for the new session
+            scoreDisplay.textContent = `Score: ${score}`;
+            livesDisplay.textContent = `Lives: ${lives}`;
+            wordInput.value = '';
+            wordInput.disabled = true;
+            wordInput.classList.remove('correct', 'incorrect');
+            clearTimeout(wordSpawnTimeout);
+            // Ensure any ongoing animation frame is cancelled to prevent ghost words
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null; // Reset ID
+            }
+            skipButton.style.display = 'none';
+            replayAudioButton.style.display = 'none';
+            drawGame(); // Clear canvas
+        }
+
+        // Function to start the game
+        async function startGame() {
+            await Tone.start();
+            resetGame(); // Resets state, clears canvas, hides buttons
+            gameRunning = true;
+            wordInput.disabled = false;
+            wordInput.focus();
+            gameOverlay.style.opacity = '0';
+            gameOverlay.style.pointerEvents = 'none';
+            skipButton.style.display = 'inline-block';
+            replayAudioButton.style.display = 'inline-block';
+
+            // IMPORTANT FIX: Initialize lastFrameTime here for accurate deltaTime calculation on first frame
+            lastFrameTime = performance.now(); 
+            animationFrameId = requestAnimationFrame(animate); // Start the main animation loop
+            spawnNewWord(); // Spawn the first word
+        }
+
+        // Function to end the game
+        function endGame() {
+            gameRunning = false;
+            wordInput.disabled = true;
+            skipButton.style.display = 'none';
+            replayAudioButton.style.display = 'none';
+            // Ensure any ongoing animation frame is cancelled
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null; // Reset ID
+            }
+            clearTimeout(wordSpawnTimeout);
+            playGameOverSound();
+
+            gameOverlay.style.opacity = '1';
+            gameOverlay.style.pointerEvents = 'auto';
+            wordInputArea.style.display = 'none';
+            loadWordsButton.style.display = 'none';
+            overlayStartGameButton.style.display = 'inline-block';
+
+            if (lives <= 0) {
+                overlayTitle.textContent = "Game Over!";
+                overlayMessage.textContent = `You scored: ${score} points. Try again!`;
+                overlayStartGameButton.textContent = "Play Again";
+            } else {
+                overlayTitle.textContent = "You Win!";
+                overlayMessage.textContent = `Congratulations! You typed all words and scored: ${score} points.`;
+                overlayStartGameButton.textContent = "Play Again";
+            }
+        }
+
+        // Function to draw the game elements
+        function drawGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#2c3e50';
+            ctx.fillRect(0, canvas.height - 30, canvas.width, 30);
+
+            if (currentWord) {
+                ctx.font = 'bold 24px Inter';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                const textToDraw = currentWord.chinese;
+                const fillColor = `rgba(149, 165, 166, ${currentWord.alpha})`; /* Concrete grey */
+                const strokeColor = `rgba(236, 240, 241, ${currentWord.alpha})`; /* Light grey border */
+                ctx.fillStyle = fillColor;
+                ctx.strokeStyle = strokeColor;
+                ctx.lineWidth = 2;
+
+                const textWidth = ctx.measureText(textToDraw).width;
+                const padding = 15;
+                const rectWidth = textWidth + padding * 2;
+                const rectHeight = 40;
+                const rectX = currentWord.x - (rectWidth / 2) * currentWord.scale;
+                const rectY = currentWord.y - (rectHeight / 2) * currentWord.scale;
+                const borderRadius = 10 * currentWord.scale;
+
+                ctx.save();
+                ctx.translate(currentWord.x, currentWord.y);
+                ctx.scale(currentWord.scale, currentWord.scale);
+                ctx.translate(-currentWord.x, -currentWord.y);
+
+                ctx.beginPath();
+                ctx.moveTo(rectX + borderRadius, rectY);
+                ctx.lineTo(rectX + rectWidth - borderRadius, rectY);
+                ctx.quadraticCurveTo(rectX + rectWidth, rectY, rectX + rectWidth, rectY + borderRadius);
+                ctx.lineTo(rectX + rectWidth, rectY + rectHeight - borderRadius);
+                ctx.quadraticCurveTo(rectX + rectWidth, rectY + rectHeight, rectX + rectWidth - borderRadius, rectY + rectHeight);
+                ctx.lineTo(rectX + borderRadius, rectY + rectHeight);
+                ctx.quadraticCurveTo(rectX, rectY + rectHeight, rectX, rectY + rectHeight - borderRadius);
+                ctx.lineTo(rectX, rectY + borderRadius);
+                ctx.quadraticCurveTo(rectX, rectY, rectX + borderRadius, rectY);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = `rgba(255, 255, 255, ${currentWord.alpha})`;
+                ctx.fillText(textToDraw, currentWord.x, currentWord.y);
+
+                ctx.restore();
+            }
+        }
+
+        let lastFrameTime = 0; // This will be initialized in startGame for the first frame
+        function animate(currentTime) {
+            // Only proceed if the game is actively running OR if a word is currently animating its "matched" state
+            if (!gameRunning && (!currentWord || !currentWord.isMatched)) {
+                return;
+            }
+
+            const deltaTime = currentTime - lastFrameTime;
+            lastFrameTime = currentTime; // Update lastFrameTime for the next frame
+
+            updateGame(deltaTime);
+            drawGame();
+            animationFrameId = requestAnimationFrame(animate);
+        }
+
+        function updateGame(deltaTime) {
+            if (!currentWord) return;
+
+            if (currentWord.isMatched) {
+                const elapsed = performance.now() - correctAnimationStartTime;
+                let progress = elapsed / CORRECT_ANIMATION_DURATION;
+                if (progress >= 1) {
+                    currentWord = null;
+                    if (gameRunning) { // Only spawn next word if game is still active
+                        wordSpawnTimeout = setTimeout(spawnNewWord, WORD_SPAWN_INTERVAL);
+                    }
+                    return;
+                }
+                let easedProgress = 1 - Math.pow(1 - progress, 3);
+                currentWord.alpha = 1 - easedProgress;
+                currentWord.scale = 1 - easedProgress * 0.5;
+                return;
+            }
+
+            currentWord.y += currentWord.speed * (deltaTime / 16);
+
+            if (currentWord.y + 20 >= canvas.height - 30) {
+                handleMissedWord();
+            }
+        }
+
+        function handleMissedWord() {
+            lives--;
+            livesDisplay.textContent = `Lives: ${lives}`;
+            playMissSound();
+            showMessageBox(`Missed: ${currentWord.english}`, 1500);
+            showFeedbackText('Missed!', 'incorrect');
+            currentWord = null;
+
+            if (lives <= 0) {
+                endGame();
+            } else {
+                wordSpawnTimeout = setTimeout(spawnNewWord, WORD_SPAWN_INTERVAL);
+            }
+        }
+
+        function handleCorrectWord() {
+            score += currentWord.english.length;
+            scoreDisplay.textContent = `Score: ${score}`;
+            playCorrectSound();
+            showMessageBox(`Correct! +${currentWord.english.length} points`, 1000);
+            showFeedbackText('Correct!', 'correct');
+
+            currentWord.isMatched = true;
+            correctAnimationStartTime = performance.now();
+
+            wordInput.value = '';
+            wordInput.classList.remove('correct', 'incorrect');
+        }
+
+        function speakWord(word) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); // IMPORTANT: Cancel any ongoing speech for reliable playback
+                const utterance = new SpeechSynthesisUtterance(word);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.9;
+                utterance.pitch = 1;
+
+                if (britishVoice) {
+                    utterance.voice = britishVoice;
+                    utterance.lang = britishVoice.lang;
+                }
+
+                window.speechSynthesis.speak(utterance);
+            } else {
+                console.warn("Speech Synthesis not supported in this browser.");
+            }
+        }
+
+        loadWordsButton.addEventListener('click', async () => {
+            const rawLines = wordInputArea.value.split('\n')
+                                .map(line => line.trim())
+                                .filter(line => line.length > 0);
+
+            if (rawLines.length === 0) {
+                showMessageBox("Please enter some words to test!", 2000);
+                return;
+            }
+
+            wordsToTest = [];
+            let invalidLines = 0;
+
+            rawLines.forEach(line => {
+                const parts = line.split(' / ');
+                if (parts.length === 2 && parts[0].trim().length > 0 && parts[1].trim().length > 0) {
+                    wordsToTest.push({ english: parts[0].trim(), chinese: parts[1].trim() });
+                } else {
+                    invalidLines++;
+                    console.warn(`Skipping invalid line: "${line}". Expected format: "English / 中文"`);
+                }
+            });
+
+            if (wordsToTest.length === 0) {
+                showMessageBox("No valid words loaded. Please check your input format (English / 中文).", 3000);
+                showSetupScreen();
+                return;
+            }
+
+            if (invalidLines > 0) {
+                showMessageBox(`Loaded ${wordsToTest.length} words. Skipped ${invalidLines} invalid lines.`, 3000);
+            } else {
+                showMessageBox(`Successfully loaded ${wordsToTest.length} words!`, 2000);
+            }
+
+            overlayMessage.textContent = `Ready to play with ${wordsToTest.length} words!`;
+            overlayStartGameButton.style.display = 'inline-block';
+            wordInputArea.style.display = 'none';
+            loadWordsButton.style.display = 'none';
+        });
+
+
+        function spawnNewWord() {
+            clearTimeout(wordSpawnTimeout);
+
+            if (remainingWords.length === 0) {
+                endGame();
+                return;
+            }
+
+            const randomIndex = Math.floor(Math.random() * remainingWords.length);
+            const wordData = remainingWords.splice(randomIndex, 1)[0];
+
+            ctx.font = 'bold 24px Inter';
+            const textWidth = ctx.measureText(wordData.chinese).width;
+            const padding = 15;
+            const rectWidth = textWidth + padding * 2;
+            const x = Math.random() * (canvas.width - rectWidth) + rectWidth / 2;
+
+            // Chinese word starts falling immediately from above the canvas (negative y)
+            // This ensures it falls into view. Word height is approx 40px, so -50 is safe.
+            const startY = -50; 
+
+            currentWord = {
+                english: wordData.english,
+                chinese: wordData.chinese,
+                x: x,
+                y: startY,
+                speed: currentGlobalSpeed, // Use the currently selected speed
+                alpha: 1,
+                scale: 1,
+                isMatched: false
+            };
+
+            speakWord(currentWord.english);
+
+            // The animation loop is already started in startGame and continues
+            // The `animate` function itself handles continuous requests.
+
+            wordInput.value = '';
+            wordInput.focus();
+        }
+
+        wordInput.addEventListener('input', (event) => {
+            if (!gameRunning || !currentWord || currentWord.isMatched) return;
+
+            const typedWord = event.target.value.trim().toLowerCase();
+            const targetWord = currentWord.english.toLowerCase();
+
+            if (targetWord.startsWith(typedWord) && typedWord.length > 0) {
+                wordInput.classList.remove('incorrect');
+                wordInput.classList.add('correct');
+            } else {
+                wordInput.classList.remove('correct');
+                wordInput.classList.add('incorrect');
+            }
+
+            if (typedWord === targetWord) {
+                handleCorrectWord();
+            }
+        });
+
+        replayAudioButton.addEventListener('click', () => {
+            if (gameRunning && currentWord && !currentWord.isMatched) {
+                speakWord(currentWord.english);
+            }
+        });
+
+        skipButton.addEventListener('click', () => {
+            if (gameRunning && currentWord && !currentWord.isMatched) {
+                handleMissedWord();
+            }
+        });
+
+        overlayStartGameButton.addEventListener('click', startGame);
+
+        // Speed adjustment button listeners
+        speedButtonsContainer.addEventListener('click', (event) => {
+            if (event.target.tagName === 'BUTTON') {
+                // Remove active class from all speed buttons
+                document.querySelectorAll('.speed-buttons button').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+
+                // Add active class to the clicked button
+                event.target.classList.add('active');
+
+                // Update global speed based on data-speed attribute
+                const speedSetting = event.target.dataset.speed;
+                switch (speedSetting) {
+                    case 'easy':
+                        currentGlobalSpeed = EASY_SPEED;
+                        break;
+                    case 'medium':
+                        currentGlobalSpeed = MEDIUM_SPEED;
+                        break;
+                    case 'hard':
+                        currentGlobalSpeed = HARD_SPEED;
+                        break;
+                }
+                // If a word is currently falling, update its speed immediately
+                // This allows speed changes mid-word, if desired.
+                if (currentWord && gameRunning) {
+                    currentWord.speed = currentGlobalSpeed;
+                }
+            }
+        });
+    </script>
+</body>
+</html>
